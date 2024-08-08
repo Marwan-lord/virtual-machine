@@ -27,7 +27,7 @@ pub trait Addressable {
                 return false;
             };
         }
-        return true;
+        true
     }
 }
 
@@ -50,7 +50,7 @@ impl Addressable for LinearMemory {
         if (addr as usize) < self.size {
             Some(self.bytes[addr as usize])
         } else {
-            return None;
+            None
         }
     }
     fn write(&mut self, addr: u16, value: u8) -> bool {
