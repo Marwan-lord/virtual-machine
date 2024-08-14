@@ -7,3 +7,6 @@ edition = "2021"
 
 [[bin]]
 name = "vm"
+
+[[bin]]
+name = "asm"

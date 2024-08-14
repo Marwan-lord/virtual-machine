@@ -1,8 +1,5 @@
 use crate::memory::*;
-// instruction = [ 0 0 0 0 0 0 0 0 0 0 |  0 0 0 0 0 0 0 0 0 ]
-//                       OPERATOR      | ARG(S)
-//                                     | 8 bit literal
-//                                     | REG1 | REG2
+
 #[derive(Debug)]
 #[repr(u8)]
 pub enum Register {
@@ -17,7 +14,7 @@ pub enum Register {
 }
 
 impl Register {
-    pub fn from_u8(v: u8) -> Option<Self>{
+    pub fn from_u8(v: u8) -> Option<Self> {
         match v {
             x if x == Register::A as u8 => Some(Register::A),
             x if x == Register::B as u8 => Some(Register::B),
@@ -27,14 +24,13 @@ impl Register {
             x if x == Register::Pc as u8 => Some(Register::Pc),
             x if x == Register::Bp as u8 => Some(Register::Bp),
             x if x == Register::Flags as u8 => Some(Register::Flags),
-            _ => None
+            _ => None,
         }
-
     }
 }
 #[repr(u8)]
 #[derive(Debug)]
-pub enum Op{
+pub enum Op {
     Nop,
     Push(u8),
     PopRegister(Register),
@@ -48,33 +44,38 @@ impl Op {
     }
 }
 
+// instruction = [ 0 0 0 0 0 0 0 0 0 0 |  0 0 0 0 0 0 0 0 0 ]
+//                       OPERATOR      | ARG(S)
+//                                     | 8 bit literal
+//                                     | REG1 | REG2
+
 fn parse_instruction(ins: u16) -> Result<Op, String> {
     let op = (ins & 0xff) as u8;
     match op {
-        x if x ==  Op::Nop.value() => Ok(Op::Nop),
-        x if x ==  Op::Push(0).value() =>  {
+        x if x == Op::Nop.value() => Ok(Op::Nop),
+        
+        x if x == Op::Push(0).value() => {
             let arg = (ins & 0xff00) >> 8;
             Ok(Op::Push(arg as u8))
         }
+
         x if x == Op::PopRegister(Register::A).value() => {
-            let reg = (ins&0xf00) >> 8;
+            let reg = (ins & 0xf00) >> 8;
             if let Some(r) = Register::from_u8(reg as u8) {
                 Ok(Op::PopRegister(r))
             } else {
-                Err(format!("unkown register: 0x{:X}", reg))   
+                Err(format!("unkown register: 0x{:X}", reg))
             }
-        },
-        x if x == Op::AddStack.value() => {
-            Ok(Op::AddStack)
         }
 
-        _ => Err(format!("unknown operation 0x{:X}", op))
+        x if x == Op::AddStack.value() => Ok(Op::AddStack),
+        _ => Err(format!("unknown operation 0x{:X}", op)),
     }
 }
 
 pub struct Machine {
     register: [u16; 8],
-    pub memory: Box<dyn Addressable> ,
+    pub memory: Box<dyn Addressable>,
 }
 
 impl Default for Machine {
@@ -108,7 +109,7 @@ impl Machine {
     pub fn push(&mut self, v: u16) -> Result<(), String> {
         let sp = self.register[Register::Sp as usize];
         if !self.memory.write2(sp, v) {
-            return Err(format!("memory read fault @ 0x{:X}", sp));
+            return Err(format!("memory write fault @ 0x{:X}", sp));
         }
         self.register[Register::Sp as usize] += 2;
         Ok(())
@@ -118,23 +119,21 @@ impl Machine {
         let pc = self.register[Register::Pc as usize];
         let instruction = self.memory.read2(pc).unwrap();
 
-        self.register[Register::Pc as usize] = pc + 2 ;
+        self.register[Register::Pc as usize] = pc + 2;
         let op = parse_instruction(instruction)?;
+
         match op {
             Op::Nop => Ok(()),
-            Op::Push(v) => {
-                self.push(v.into())
-            }
+            Op::Push(v) => self.push(v.into()),
             Op::PopRegister(r) => {
                 let value = self.pop()?;
                 self.register[r as usize] = value;
                 Ok(())
-            },
+            }
             Op::AddStack => {
                 let a = self.pop()?;
                 let b = self.pop()?;
                 self.push(a + b)
-
             }
             Op::AddRegister(r1, r2) => {
                 self.register[r1 as usize] += self.register[r2 as usize];
