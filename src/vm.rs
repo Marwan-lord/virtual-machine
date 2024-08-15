@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::memory::*;
 
 #[derive(Debug)]
@@ -36,6 +38,7 @@ pub enum Op {
     PopRegister(Register),
     AddStack,
     AddRegister(Register, Register),
+    Signal(u8),
 }
 
 impl Op {
@@ -49,13 +52,17 @@ impl Op {
 //                                     | 8 bit literal
 //                                     | REG1 | REG2
 
+fn parse_instruction_arg(ins: u16) -> u8 {
+    ((ins & 0xff00) >> 8) as u8
+}
+
 fn parse_instruction(ins: u16) -> Result<Op, String> {
     let op = (ins & 0xff) as u8;
     match op {
         x if x == Op::Nop.value() => Ok(Op::Nop),
-        
+
         x if x == Op::Push(0).value() => {
-            let arg = (ins & 0xff00) >> 8;
+            let arg = parse_instruction_arg(ins);
             Ok(Op::Push(arg as u8))
         }
 
@@ -67,12 +74,20 @@ fn parse_instruction(ins: u16) -> Result<Op, String> {
         }
 
         x if x == Op::AddStack.value() => Ok(Op::AddStack),
+        x if x == Op::Signal(0).value() => {
+            let arg = parse_instruction_arg(ins);
+            Ok(Op::Signal(arg))
+        }
         _ => Err(format!("unknown operation 0x{:X}", op)),
     }
 }
 
+pub type SignalFunction = fn(&mut Machine) -> Result<(), String>;
+
 pub struct Machine {
     register: [u16; 8],
+    signal_handlers: HashMap<u8, SignalFunction>,
+    pub halt: bool,
     pub memory: Box<dyn Addressable>,
 }
 
@@ -86,8 +101,14 @@ impl Machine {
     pub fn new() -> Self {
         Self {
             register: [0; 8],
+            signal_handlers: HashMap::new(),
+            halt: false,
             memory: Box::new(LinearMemory::new(8 * 1024)),
         }
+    }
+
+    pub fn define_handler(&mut self, index: u8, f: SignalFunction){
+        self.signal_handlers.insert(index, f);
     }
 
     pub fn get_register(&self, r: Register) -> u16 {
@@ -115,7 +136,7 @@ impl Machine {
 
     pub fn step(&mut self) -> Result<(), String> {
         let pc = self.register[Register::Pc as usize];
-        let instruction = self.memory.read2(pc).unwrap();
+        let instruction = self.memory.read2(pc).ok_or(format!("pc read fail @ 0x{:X}", pc))?;
 
         self.register[Register::Pc as usize] = pc + 2;
         let op = parse_instruction(instruction)?;
@@ -136,6 +157,13 @@ impl Machine {
             Op::AddRegister(r1, r2) => {
                 self.register[r1 as usize] += self.register[r2 as usize];
                 Ok(())
+            }
+            Op::Signal(signal) => {
+                let sig_fn = self
+                    .signal_handlers
+                    .get(&signal)
+                    .ok_or(format!("unkown signal: 0x{:X}", signal))?;
+                sig_fn(self)
             }
         }
     }
