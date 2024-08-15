@@ -3,9 +3,11 @@ use virtual_machine::vm::*;
 
 pub fn main() -> Result<(), String> {
     let args: Vec<_> = env::args().collect();
+
     if args.len() != 2 {
         panic!("usage: {} <input>", args[0]);
     }
+
     let file = File::open(Path::new(&args[1])).map_err(|x| format!("can't open: {}", x))?;
     let mut reader = BufReader::new(file);
     let mut program: Vec<u8> = Vec::new();
