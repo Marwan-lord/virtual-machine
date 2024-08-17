@@ -17,17 +17,16 @@ pub enum Instruction {
 }
 
 impl Instruction {
-
     fn encode_r1(r: Register) -> u16 {
-        (r as u16)&0xf << 8
+        (r as u16) & 0xf << 8
     }
 
     fn encode_r2(r: Register) -> u16 {
-        (r as u16)&0xf << 12
+        (r as u16) & 0xf << 12
     }
 
     fn encode_num(num: u16) -> u16 {
-        (num as u16) << 8
+        num << 8
     }
 
     pub fn encode_rs(r1: Register, r2: Register) -> u16 {
@@ -42,7 +41,7 @@ impl Instruction {
             Self::PushRegister(r) => OpCode::PushRegister as u16 | Self::encode_r1(*r),
             Self::AddStack => OpCode::AddStack as u16,
             Self::AddRegister(r1, r2) => OpCode::AddRegister as u16 | Self::encode_rs(*r1, *r2),
-            Self::Signal(x) => OpCode::Signal as u16 | Self::encode_num(*x as u16)
+            Self::Signal(x) => OpCode::Signal as u16 | Self::encode_num(*x as u16),
         }
     }
 }
@@ -60,7 +59,7 @@ pub enum OpCode {
 }
 
 impl OpCode {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn from_string(s: &str) -> Option<Self> {
         match s {
             "Nop" => Some(Self::Nop),
             "Push" => Some(Self::Push),
@@ -75,15 +74,14 @@ impl OpCode {
 
     pub fn from_u8(b: u8) -> Option<Self> {
         match b {
-            x if x == Self::Nop as u8 => Some(Self::Nop), 
-            x if x == Self::Push as u8 => Some(Self::Push), 
-            x if x == Self::PopRegister as u8 => Some(Self::PopRegister), 
+            x if x == Self::Nop as u8 => Some(Self::Nop),
+            x if x == Self::Push as u8 => Some(Self::Push),
+            x if x == Self::PopRegister as u8 => Some(Self::PopRegister),
             x if x == Self::PushRegister as u8 => Some(Self::PushRegister),
-            x if x == Self::Signal as u8 => Some(Self::Signal), 
-            x if x == Self::AddStack as u8 => Some(Self::AddStack), 
-            x if x == Self::AddRegister as u8 => Some(Self::AddRegister), 
+            x if x == Self::Signal as u8 => Some(Self::Signal),
+            x if x == Self::AddStack as u8 => Some(Self::AddStack),
+            x if x == Self::AddRegister as u8 => Some(Self::AddRegister),
             _ => None,
         }
     }
 }
-

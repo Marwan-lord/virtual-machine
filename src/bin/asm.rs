@@ -1,19 +1,21 @@
 use std::{
-    env, fs::File,io::{self, BufRead, Write}, path::Path
+    env,
+    fs::File,
+    io::{self, BufRead, Write},
+    path::Path,
 };
 
 use virtual_machine::{op::Instruction, op::OpCode, register::Register};
 
 fn parse_numeric(s: &str) -> Result<u8, String> {
-    if s.len() == 0 {
-        return Err("string has no length ".to_string())
+    if s.is_empty() {
+        return Err("string has no length ".to_string());
     }
-    let fst = s.chars().nth(0).unwrap();
+    let fst = s.chars().next().unwrap();
     let (num, radix) = match fst {
         '$' => (&s[1..], 16),
         '%' => (&s[1..], 2),
-        _ => (s, 10)
-
+        _ => (s, 10),
     };
     u8::from_str_radix(num, radix).map_err(|x| format!("{}", x))
 }
@@ -21,7 +23,7 @@ fn parse_numeric(s: &str) -> Result<u8, String> {
 fn parse_register(s: &str) -> Result<Register, String> {
     match s {
         "A" => Ok(Register::A),
-        _ => Err(format!("unkown register: {}",s))
+        _ => Err(format!("unkown register: {}", s)),
     }
 }
 
@@ -34,37 +36,36 @@ fn assert_length(parts: &[&str], n: usize) -> Result<(), String> {
 }
 
 fn handle_line(parts: &[&str]) -> Result<Instruction, String> {
-    let opcode = OpCode::from_str(&parts[0]).ok_or(format!("unkown opcode: {}", parts[0]))?;
+    let opcode = OpCode::from_string(parts[0]).ok_or(format!("unkown opcode: {}", parts[0]))?;
     match opcode {
-        OpCode::Nop => Ok(Instruction::Nop), 
+        OpCode::Nop => Ok(Instruction::Nop),
         OpCode::Push => {
             assert_length(parts, 2)?;
-            Ok(Instruction::Push(parse_numeric(&parts[1])?))
+            Ok(Instruction::Push(parse_numeric(parts[1])?))
         }
         OpCode::AddStack => {
-            assert_length(&parts, 1)?;
+            assert_length(parts, 1)?;
             Ok(Instruction::AddStack)
         }
         OpCode::AddRegister => {
-            assert_length(&parts, 3)?;
+            assert_length(parts, 3)?;
             Ok(Instruction::AddRegister(
-                    parse_register(parts[1])?, 
-                    parse_register(parts[2])?
+                parse_register(parts[1])?,
+                parse_register(parts[2])?,
             ))
         }
         OpCode::PopRegister => {
-            assert_length(&parts, 2)?;
+            assert_length(parts, 2)?;
             Ok(Instruction::PopRegister(parse_register(parts[1])?))
         }
         OpCode::PushRegister => {
-            assert_length(&parts, 2)?;
+            assert_length(parts, 2)?;
             Ok(Instruction::PushRegister(parse_register(parts[1])?))
         }
         OpCode::Signal => {
-            assert_length(&parts, 2)?;
+            assert_length(parts, 2)?;
             Ok(Instruction::Signal(parse_numeric(parts[1])?))
         }
-        
     }
 }
 
@@ -81,10 +82,10 @@ fn main() -> Result<(), String> {
     for line in io::BufReader::new(file).lines() {
         let line_inner = line.map_err(|_x| "foo")?;
 
-        if line_inner.len() == 0 {
+        if line_inner.is_empty() {
             continue;
         }
-        if line_inner.chars().nth(0).unwrap() == ';' {
+        if line_inner.starts_with(';') {
             continue;
         }
         let parts: Vec<_> = line_inner.split(' ').filter(|x| !x.is_empty()).collect();
