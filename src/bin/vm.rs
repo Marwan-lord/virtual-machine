@@ -21,12 +21,11 @@ pub fn main() -> Result<(), String> {
 
 
     let mut vm = Machine::new();
+    vm.set_register(Register::Sp, 0x1000);
     vm.define_handler(0xf0, signal_halt);
     vm.memory.load_from_vec(&program, 0);
     while !vm.halt {
-        vm.step()?;
-        vm.step()?;
-        vm.step()?;
+        println!("{}", vm.state());
         vm.step()?;
     }
     println!("A =  {}", vm.get_register(Register::A));

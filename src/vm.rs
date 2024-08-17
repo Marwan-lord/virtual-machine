@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use crate::memory::*;
-use crate::register::Register;
+use crate::register::*;
+use crate::op::*;
 
 fn parse_instruction_arg(ins: u16) -> u8 {
     ((ins & 0xff00) >> 8) as u8
@@ -23,7 +24,12 @@ fn parse_instruction(ins: u16) -> Result<Instruction, String> {
                 .ok_or(format!("unkown register: 0x{:X}", reg))
                 .map(|r| Instruction::PopRegister(r))
         }
-
+        OpCode::PushRegister => {
+            let reg = (ins & 0xf00) >> 8;
+            Register::from_u8(reg as u8)
+                .ok_or(format!("unkown register: 0x{:X}", reg))
+                .map(|r| Instruction::PushRegister(r))
+        }
         OpCode::AddRegister => {
             let reg1_raw = (ins&0xf00)>>8;
             let reg2_raw = (ins&0xf000)>>12;
@@ -70,12 +76,31 @@ impl Machine {
         }
     }
 
+    pub fn state(&self) -> String {
+        format!("A: {} | B: {} | C: {} | M: {}
+SP: {} | PC: {} | BP: {}
+FLAGS: {:X}",
+            self.get_register(Register::A),
+            self.get_register(Register::B),
+            self.get_register(Register::C),
+            self.get_register(Register::M),
+            self.get_register(Register::Sp),
+            self.get_register(Register::Pc),
+            self.get_register(Register::Bp),
+            self.get_register(Register::Flags),
+)
+    }
+
     pub fn define_handler(&mut self, index: u8, f: SignalFunction) {
         self.signal_handlers.insert(index, f);
     }
 
     pub fn get_register(&self, r: Register) -> u16 {
         self.register[r as usize]
+    }
+
+    pub fn set_register(&mut self, r: Register, v: u16) {
+        self.register[r as usize] = v;
     }
 
     pub fn pop(&mut self) -> Result<u16, String> {
@@ -114,6 +139,11 @@ impl Machine {
                 let value = self.pop()?;
                 self.register[r as usize] = value;
                 Ok(())
+            }
+            Instruction::PushRegister(r) => {
+                self.push(self.register[r as usize])?;
+                Ok(())
+                
             }
             Instruction::AddStack => {
                 let a = self.pop()?;

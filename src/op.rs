@@ -12,6 +12,7 @@ pub enum Instruction {
     PopRegister(Register),
     AddStack,
     AddRegister(Register, Register),
+    PushRegister(Register),
     Signal(u8),
 }
 
@@ -38,6 +39,7 @@ impl Instruction {
             Self::Nop => OpCode::Nop as u16,
             Self::Push(x) => OpCode::Push as u16 | Self::encode_num(*x as u16),
             Self::PopRegister(r) => OpCode::PopRegister as u16 | Self::encode_r1(*r),
+            Self::PushRegister(r) => OpCode::PushRegister as u16 | Self::encode_r1(*r),
             Self::AddStack => OpCode::AddStack as u16,
             Self::AddRegister(r1, r2) => OpCode::AddRegister as u16 | Self::encode_rs(*r1, *r2),
             Self::Signal(x) => OpCode::Signal as u16 | Self::encode_num(*x as u16)
@@ -51,6 +53,7 @@ pub enum OpCode {
     Nop = 0x0,
     Push = 0x1,
     PopRegister = 0x2,
+    PushRegister = 0x3,
     Signal = 0x0f,
     AddStack = 0x10,
     AddRegister = 0x11,
@@ -62,6 +65,7 @@ impl OpCode {
             "Nop" => Some(Self::Nop),
             "Push" => Some(Self::Push),
             "PopRegister" => Some(Self::PopRegister),
+            "PushRegister" => Some(Self::PushRegister),
             "Signal" => Some(Self::Signal),
             "AddStack" => Some(Self::AddStack),
             "AddRegister" => Some(Self::AddRegister),
@@ -74,6 +78,7 @@ impl OpCode {
             x if x == Self::Nop as u8 => Some(Self::Nop), 
             x if x == Self::Push as u8 => Some(Self::Push), 
             x if x == Self::PopRegister as u8 => Some(Self::PopRegister), 
+            x if x == Self::PushRegister as u8 => Some(Self::PushRegister),
             x if x == Self::Signal as u8 => Some(Self::Signal), 
             x if x == Self::AddStack as u8 => Some(Self::AddStack), 
             x if x == Self::AddRegister as u8 => Some(Self::AddRegister), 
