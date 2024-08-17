@@ -2,7 +2,7 @@ use std::{
     env, fs::File,io::{self, BufRead, Write}, path::Path
 };
 
-use virtual_machine::{Instruction, OpCode, Register};
+use virtual_machine::{op::Instruction, op::OpCode, register::Register};
 
 fn parse_numeric(s: &str) -> Result<u8, String> {
     if s.len() == 0 {

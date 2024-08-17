@@ -1,5 +1,6 @@
 use std::{env, fs::File, io::{BufReader, Read}, path::Path};
 use virtual_machine::vm::*;
+use virtual_machine::register::Register;
 
 fn signal_halt(vm: &mut Machine) -> Result<(), String> {
     vm.halt = true;
