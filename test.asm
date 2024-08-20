@@ -1,5 +1,5 @@
 ;hello this is a comment
-Push 10
+Push 9
 Push 13
 AddStack
 PopRegister A

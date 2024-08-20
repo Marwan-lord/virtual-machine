@@ -7,9 +7,20 @@ use std::{
 
 use virtual_machine::{op::Instruction, op::OpCode, register::Register};
 
-fn parse_numeric(s: &str) -> Result<u8, String> {
+#[derive(Debug)]
+pub enum AsmErr {
+    ParseErr,
+    UnknownReg,
+    UnknownOpCode,
+    LenErr,
+    NoArg,
+    UnknownFile,
+    WriteErr,
+}
+
+fn parse_numeric(s: &str) -> Result<u8, AsmErr> {
     if s.is_empty() {
-        return Err("string has no length ".to_string());
+        return Err(AsmErr::ParseErr);
     }
     let fst = s.chars().next().unwrap();
     let (num, radix) = match fst {
@@ -17,26 +28,26 @@ fn parse_numeric(s: &str) -> Result<u8, String> {
         '%' => (&s[1..], 2),
         _ => (s, 10),
     };
-    u8::from_str_radix(num, radix).map_err(|x| format!("{}", x))
+    u8::from_str_radix(num, radix).map_err(|_| AsmErr::ParseErr)
 }
 
-fn parse_register(s: &str) -> Result<Register, String> {
+fn parse_register(s: &str) -> Result<Register, AsmErr> {
     match s {
         "A" => Ok(Register::A),
-        _ => Err(format!("unkown register: {}", s)),
+        _ => Err(AsmErr::UnknownReg),
     }
 }
 
-fn assert_length(parts: &[&str], n: usize) -> Result<(), String> {
+fn assert_length(parts: &[&str], n: usize) -> Result<(), AsmErr> {
     if parts.len() == n {
         Ok(())
     } else {
-        Err(format!("expected {} got {}", parts.len(), n))
+        Err(AsmErr::LenErr)
     }
 }
 
-fn handle_line(parts: &[&str]) -> Result<Instruction, String> {
-    let opcode = OpCode::from_string(parts[0]).ok_or(format!("unkown opcode: {}", parts[0]))?;
+fn handle_line(parts: &[&str]) -> Result<Instruction, AsmErr> {
+    let opcode = OpCode::from_string(parts[0]).ok_or(AsmErr::UnknownOpCode)?;
     match opcode {
         OpCode::Nop => Ok(Instruction::Nop),
         OpCode::Push => {
@@ -69,18 +80,18 @@ fn handle_line(parts: &[&str]) -> Result<Instruction, String> {
     }
 }
 
-fn main() -> Result<(), String> {
+fn main() -> Result<(), AsmErr> {
     let args: Vec<_> = env::args().collect();
 
     if args.len() != 2 {
         panic!("usage: {} <input>", args[0]);
     }
 
-    let file = File::open(Path::new(&args[1])).map_err(|x| format!("failed to open: {}", x))?;
+    let file = File::open(Path::new(&args[1])).map_err(|_| AsmErr::UnknownFile)?;
     let mut output: Vec<u8> = Vec::new();
 
     for line in io::BufReader::new(file).lines() {
-        let line_inner = line.map_err(|_x| "foo")?;
+        let line_inner = line.expect("line error");
 
         if line_inner.is_empty() {
             continue;
@@ -101,6 +112,6 @@ fn main() -> Result<(), String> {
     }
 
     let mut stdout = io::stdout().lock();
-    stdout.write_all(&output).map_err(|x| format!("{}", x))?;
+    stdout.write_all(&output).map_err(|_| AsmErr::WriteErr)?;
     Ok(())
 }

@@ -1,16 +1,28 @@
 use std::collections::HashMap;
 
 use crate::memory::*;
-use crate::register::*;
 use crate::op::*;
+use crate::register::*;
+
+#[derive(Debug)]
+pub enum MachineErr {
+    UnknownOp,
+    UnknownReg,
+    ReadFault,
+    WriteFault,
+    PcFault,
+    UnknownSignal,
+    UnknownFile,
+
+}
 
 fn parse_instruction_arg(ins: u16) -> u8 {
     ((ins & 0xff00) >> 8) as u8
 }
 
-fn parse_instruction(ins: u16) -> Result<Instruction, String> {
+fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
     let op = (ins & 0xff) as u8;
-    match OpCode::from_u8(op).ok_or(format!("unkown op: 0x{:X}", op))? {
+    match OpCode::from_u8(op).ok_or(MachineErr::UnknownOp)? {
         OpCode::Nop => Ok(Instruction::Nop),
 
         OpCode::Push => {
@@ -21,24 +33,26 @@ fn parse_instruction(ins: u16) -> Result<Instruction, String> {
         OpCode::PopRegister => {
             let reg = (ins & 0xf00) >> 8;
             Register::from_u8(reg as u8)
-                .ok_or(format!("unkown register: 0x{:X}", reg))
+                .ok_or(MachineErr::UnknownReg)
                 .map(|r| Instruction::PopRegister(r))
         }
+
         OpCode::PushRegister => {
             let reg = (ins & 0xf00) >> 8;
             Register::from_u8(reg as u8)
-                .ok_or(format!("unkown register: 0x{:X}", reg))
+                .ok_or(MachineErr::UnknownReg)
                 .map(|r| Instruction::PushRegister(r))
         }
-        OpCode::AddRegister => {
-            let reg1_raw = (ins&0xf00)>>8;
-            let reg2_raw = (ins&0xf000)>>12;
 
-            let reg1 = Register::from_u8( reg1_raw as u8)
-                .ok_or(format!("unkown register: 0x{:X}", reg1_raw))?;
+        OpCode::AddRegister => {
+            let reg1_raw = (ins & 0xf00) >> 8;
+            let reg2_raw = (ins & 0xf000) >> 12;
+
+            let reg1 = Register::from_u8(reg1_raw as u8)
+                .ok_or(MachineErr::UnknownReg)?;
 
             let reg2 = Register::from_u8(reg2_raw as u8)
-                .ok_or(format!("unkown register: 0x{:X}", reg2_raw))?;
+                .ok_or(MachineErr::UnknownReg)?;
 
             Ok(Instruction::AddRegister(reg1, reg2))
         }
@@ -51,7 +65,7 @@ fn parse_instruction(ins: u16) -> Result<Instruction, String> {
     }
 }
 
-pub type SignalFunction = fn(&mut Machine) -> Result<(), String>;
+pub type SignalFunction = fn(&mut Machine) -> Result<(), MachineErr>;
 
 pub struct Machine {
     register: [u16; 8],
@@ -77,7 +91,8 @@ impl Machine {
     }
 
     pub fn state(&self) -> String {
-        format!("A: {} | B: {} | C: {} | M: {}
+        format!(
+            "A: {} | B: {} | C: {} | M: {}
 SP: {} | PC: {} | BP: {}
 FLAGS: {:X}",
             self.get_register(Register::A),
@@ -88,7 +103,7 @@ FLAGS: {:X}",
             self.get_register(Register::Pc),
             self.get_register(Register::Bp),
             self.get_register(Register::Flags),
-)
+        )
     }
 
     pub fn define_handler(&mut self, index: u8, f: SignalFunction) {
@@ -103,32 +118,31 @@ FLAGS: {:X}",
         self.register[r as usize] = v;
     }
 
-    pub fn pop(&mut self) -> Result<u16, String> {
+    pub fn pop(&mut self) -> Result<u16, MachineErr> {
         let sp = self.register[Register::Sp as usize] - 2;
         if let Some(v) = self.memory.read2(sp) {
             self.register[Register::Sp as usize] -= 2;
             Ok(v)
         } else {
-            Err(format!("memory read fault @ 0x{:X}", sp))
+            Err(MachineErr::ReadFault)
         }
     }
 
-    pub fn push(&mut self, v: u16) -> Result<(), String> {
+    pub fn push(&mut self, v: u16) -> Result<(), MachineErr> {
         let sp = self.register[Register::Sp as usize];
         if !self.memory.write2(sp, v) {
-            return Err(format!("memory write fault @ 0x{:X}", sp));
+            return Err(MachineErr::WriteFault);
         }
         self.register[Register::Sp as usize] += 2;
         Ok(())
     }
 
-    pub fn step(&mut self) -> Result<(), String> {
+    pub fn step(&mut self) -> Result<(), MachineErr> {
         let pc = self.register[Register::Pc as usize];
         let instruction = self
             .memory
             .read2(pc)
-            .ok_or(format!("pc read fail @ 0x{:X}", pc))?;
-
+            .ok_or(MachineErr::PcFault)?;
         self.register[Register::Pc as usize] = pc + 2;
         let op = parse_instruction(instruction)?;
 
@@ -143,7 +157,6 @@ FLAGS: {:X}",
             Instruction::PushRegister(r) => {
                 self.push(self.register[r as usize])?;
                 Ok(())
-                
             }
             Instruction::AddStack => {
                 let a = self.pop()?;
@@ -158,7 +171,7 @@ FLAGS: {:X}",
                 let sig_fn = self
                     .signal_handlers
                     .get(&signal)
-                    .ok_or(format!("unkown signal: 0x{:X}", signal))?;
+                    .ok_or(MachineErr::UnknownSignal)?;
                 sig_fn(self)
             }
         }
