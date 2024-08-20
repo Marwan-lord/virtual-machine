@@ -114,4 +114,5 @@ fn main() -> Result<(), AsmErr> {
     let mut stdout = io::stdout().lock();
     stdout.write_all(&output).map_err(|_| AsmErr::WriteErr)?;
     Ok(())
+
 }
