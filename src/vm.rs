@@ -13,7 +13,6 @@ pub enum MachineErr {
     PcFault,
     UnknownSignal,
     UnknownFile,
-
 }
 
 fn parse_instruction_arg(ins: u16) -> u8 {
@@ -48,11 +47,9 @@ fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
             let reg1_raw = (ins & 0xf00) >> 8;
             let reg2_raw = (ins & 0xf000) >> 12;
 
-            let reg1 = Register::from_u8(reg1_raw as u8)
-                .ok_or(MachineErr::UnknownReg)?;
+            let reg1 = Register::from_u8(reg1_raw as u8).ok_or(MachineErr::UnknownReg)?;
 
-            let reg2 = Register::from_u8(reg2_raw as u8)
-                .ok_or(MachineErr::UnknownReg)?;
+            let reg2 = Register::from_u8(reg2_raw as u8).ok_or(MachineErr::UnknownReg)?;
 
             Ok(Instruction::AddRegister(reg1, reg2))
         }
@@ -139,10 +136,7 @@ FLAGS: {:X}",
 
     pub fn step(&mut self) -> Result<(), MachineErr> {
         let pc = self.register[Register::Pc as usize];
-        let instruction = self
-            .memory
-            .read2(pc)
-            .ok_or(MachineErr::PcFault)?;
+        let instruction = self.memory.read2(pc).ok_or(MachineErr::PcFault)?;
         self.register[Register::Pc as usize] = pc + 2;
         let op = parse_instruction(instruction)?;
 
