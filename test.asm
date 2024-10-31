@@ -1,4 +1,4 @@
-;hello this is a comment
+; This is a comment
 Push 9
 Push 13
 AddStack
