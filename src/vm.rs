@@ -15,11 +15,14 @@ pub enum MachineErr {
     UnknownFile,
 }
 
+// Mask the half containing the operator
 fn parse_instruction_arg(ins: u16) -> u8 {
     ((ins & 0xff00) >> 8) as u8
 }
 
+// Parse each instruction of the instruction set
 fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
+    // get the operator 8-bits from the instruction
     let op = (ins & 0xff) as u8;
     match OpCode::from_u8(op).ok_or(MachineErr::UnknownOp)? {
         OpCode::Nop => Ok(Instruction::Nop),
@@ -44,6 +47,7 @@ fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
         }
 
         OpCode::AddRegister => {
+            // The other 8-bits can contain 2 4-bits regs the we can mask
             let reg1_raw = (ins & 0xf00) >> 8;
             let reg2_raw = (ins & 0xf000) >> 12;
 
@@ -134,6 +138,7 @@ FLAGS: {:X}",
         Ok(())
     }
 
+    // Read Each instruction from the memory and execute it
     pub fn step(&mut self) -> Result<(), MachineErr> {
         let pc = self.register[Register::Pc as usize];
         let instruction = self.memory.read2(pc).ok_or(MachineErr::PcFault)?;
