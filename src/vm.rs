@@ -145,7 +145,7 @@ FLAGS: {:X}",
         self.register[Register::Pc as usize] = pc + 2;
         let op = parse_instruction(instruction)?;
 
-        println!("Instruction: {:?}", op);
+        println!("Operation : {:?}", op);
 
         match op {
             Instruction::Nop => Ok(()),
