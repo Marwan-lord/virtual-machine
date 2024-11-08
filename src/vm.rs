@@ -91,6 +91,7 @@ impl Machine {
         }
     }
 
+    // Used to debug the state of the machine 
     pub fn state(&self) -> String {
         format!(
             "A: {} | B: {} | C: {} | M: {}
