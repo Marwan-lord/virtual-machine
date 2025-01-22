@@ -15,7 +15,7 @@ pub enum MachineErr {
     UnknownFile,
 }
 
-// Mask the half containing the operator
+// Mask the half containing the operator :>
 fn parse_instruction_arg(ins: u16) -> u8 {
     ((ins & 0xff00) >> 8) as u8
 }
@@ -31,6 +31,7 @@ fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
             let arg = parse_instruction_arg(ins);
             Ok(Instruction::Push(arg))
         }
+
 
         OpCode::PopRegister => {
             let reg = (ins & 0xf00) >> 8;
