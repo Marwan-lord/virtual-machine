@@ -11,7 +11,7 @@ pub fn main() -> Result<(), MachineErr> {
     let args: Vec<_> = env::args().collect();
 
     if args.len() != 2 {
-        panic!("Usage: {} <input>", args[0]);
+        panic!("usage: {} <input>", args[0]);
     }
 
     let file = File::open(Path::new(&args[1])).map_err(|_| MachineErr::UnknownFile)?;
