@@ -1,8 +1,8 @@
-# VM16: 16-Bit Virtual Machine and Assembler
+# VM8: 8-Bit Virtual Machine and Assembler
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A lightweight 16-bit virtual machine with a custom assembler, designed for learning and  experimentation. Execute custom assembly code on a simulated 16-bit architecture!
+A lightweight 8-bit virtual machine with a custom assembler, designed for learning and  experimentation. Execute custom assembly code on a simulated 16-bit architecture!
 
 ---
 
@@ -16,7 +16,7 @@ A lightweight 16-bit virtual machine with a custom assembler, designed for learn
 ---
 
 ## Features
-- **16-Bit Architecture**: 4 general-purpose registers. 
+- **8-Bit Architecture**: 4 general-purpose registers (each 8-bits).
 - **Instruction Set**: Includes arithmetic, stack operations.
 - **Portable**: Written in Rust for cross-platform use.
 - **Educational**: Ideal for learning low-level programming.
@@ -28,8 +28,8 @@ A lightweight 16-bit virtual machine with a custom assembler, designed for learn
 ### Run a Sample Program
 ```bash
 # Clone the repo
-git clone https://github.com/Marwan-lord/virtual-machine.git vm16
-cd vm16
+git clone https://github.com/Marwan-lord/virtual-machine.git vm8
+cd vm8
 
 cargo run --bin asm <assembly>.asm >> <executable>.bin
 cargo run --bin vm <executable>.bin
@@ -45,9 +45,9 @@ Signal $f0
 ```
 
 ## Documentation
-[here](https://github.com/Marwan-lord/)
-## License 
+[here](https://github.com/Marwan-lord/virtual-machine/blob/main/docs/arch.txt)
 
+## License 
 ```
 
 Copyright (c) 2025 Marwan Mohamed
