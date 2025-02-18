@@ -1,0 +1,56 @@
+1. INTRODUCTION
+-----
+This is a 8 bit virtual machine designed to execute custom assembly code. It is very a simplified architecture desgined
+to help learn more low level programming This document is made to help write and understand similar virtual machines
+and how the instruction set and assembler work.
+
+
+
+2. Archticture Overview
+-----
+* Registers:
+There are 4 general purpose register 8 bits each (A, B, C, M)
+Also there are Sp(Stack pointer), Pc(Program counter), Bp(Base pointer), Flags registers 
+
+
+* Memory
+Memory size is 1024 bytes which is 8192 bits 
+The memory layout is boring as the stack pointer always starts at 0x1000 which is called the stack space
+Reading from memory isn't intersting and it's explained in the code so go read it :>
+
+
+* Instruction Layout
+Fixed 16-bit  byte instructions: 
+    [00000000] [00000000]
+
+      Opcode  |  Arg(s)
+              |  8-bit value
+              |  Reg1 | Reg2 (4-bits each)
+
+Avialable Opcodes:
+   Assembler repr          Hex value
+    Nop                 :  0x0,
+    Push                :  0x1,
+    PopRegister         :  0x2,
+    PushRegister        :  0x3,
+    Signal              :  0x0f,
+    AddStack            :  0x10,
+    AddRegister         :  0x11,
+
+* Walk through How does the machine work in simple terms
+You write the the assembly program in human readable assembley code instructions like Push <value> ,PopRegister <register>
+what the assembler does is take these human readable lines and convert them into there hex representation 
+The Opcode in 8-bits and the arg in the next 8-bits
+
+eg.   Push 9 -> [00000001] [00001001] the assembler does this for all instructions which is simple enough but it doesn't do much
+
+
+
+This where the The actual virtual machine part comes to play
+the virtual-machine loads the binary file into memory reads each 16-bit address
+then separates each 8-bits interprets the first 8-bits as the opcode and the second 8-bits as the args
+and depending on the opcode it interprets the args diffrently 
+
+some instructions take args as 8-bit values other take registers  
+
+it's basicly what the virtual machine does if you would like how it does it  check the code 
