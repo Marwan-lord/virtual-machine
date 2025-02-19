@@ -1,6 +1,11 @@
-use std::{env, fs::File, io::{BufReader, Read}, path::Path};
-use virtual_machine::vm::*;
+use std::{
+    env,
+    fs::File,
+    io::{BufReader, Read},
+    path::Path,
+};
 use virtual_machine::register::Register;
+use virtual_machine::vm::*;
 
 fn signal_halt(vm: &mut Machine) -> Result<(), MachineErr> {
     vm.halt = true;

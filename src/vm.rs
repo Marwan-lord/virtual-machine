@@ -32,7 +32,6 @@ fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
             Ok(Instruction::Push(arg))
         }
 
-
         OpCode::PopRegister => {
             let reg = (ins & 0xf00) >> 8;
             Register::from_u8(reg as u8)
