@@ -4,6 +4,7 @@ use crate::memory::*;
 use crate::op::*;
 use crate::register::*;
 
+
 #[derive(Debug)]
 pub enum MachineErr {
     UnknownOp,

@@ -2,12 +2,13 @@ pub trait Addressable {
     fn read(&self, addr: u16) -> Option<u8>;
     fn write(&mut self, addr: u16, value: u8) -> bool;
 
+    //
     // compining the first 8 bits with the next 8 bits to form the 16-bit instruciont set
     //  [00000000]    [00000000]
     //      Op         Value | register
     //   [0000000000000000]
     //      Instruction
-    //
+    //      
     fn read2(&self, addr: u16) -> Option<u16> {
         if let Some(x0) = self.read(addr) {
             if let Some(x1) = self.read(addr + 1) {
