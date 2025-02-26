@@ -28,6 +28,7 @@ pub fn main() -> Result<(), MachineErr> {
     vm.set_register(Register::Sp, 0x1000);
     vm.define_handler(0xf0, signal_halt);
     vm.memory.load_from_vec(&program, 0);
+
     while !vm.halt {
         println!("{}", vm.state());
         vm.step()?;

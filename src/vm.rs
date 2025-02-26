@@ -4,7 +4,6 @@ use crate::memory::*;
 use crate::op::*;
 use crate::register::*;
 
-
 #[derive(Debug)]
 pub enum MachineErr {
     UnknownOp,
@@ -25,6 +24,7 @@ fn parse_instruction_arg(ins: u16) -> u8 {
 fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
     // get the operator 8-bits from the instruction
     let op = (ins & 0xff) as u8;
+    println!("Op: {}", op);
     match OpCode::from_u8(op).ok_or(MachineErr::UnknownOp)? {
         OpCode::Nop => Ok(Instruction::Nop),
 
@@ -64,6 +64,15 @@ fn parse_instruction(ins: u16) -> Result<Instruction, MachineErr> {
             let arg = parse_instruction_arg(ins);
             Ok(Instruction::Signal(arg))
         }
+
+        OpCode::JmpReg => {
+            let reg = (ins & 0xf00) >> 8;
+            Register::from_u8(reg as u8)
+                .ok_or(MachineErr::UnknownReg)
+                .map(|r| Instruction::JmpReg(r))
+        }
+
+        OpCode::JmpImm => Ok(Instruction::JmpImm),
     }
 }
 
@@ -92,7 +101,7 @@ impl Machine {
         }
     }
 
-    // Used to debug the state of the machine 
+    // Used to debug the state of the machine
     pub fn state(&self) -> String {
         format!(
             "A: {} | B: {} | C: {} | M: {}
@@ -176,6 +185,30 @@ FLAGS: {:X}",
                     .get(&signal)
                     .ok_or(MachineErr::UnknownSignal)?;
                 sig_fn(self)
+            }
+            Instruction::JmpImm => {
+                let address = self
+                    .memory
+                    .read2(self.register[Register::Pc as usize])
+                    .ok_or(MachineErr::PcFault)?;
+
+                if address as usize >= self.memory.len() {
+                    return Err(MachineErr::PcFault);
+                }
+
+                self.set_register(Register::Pc, address);
+                Ok(())
+            }
+
+            Instruction::JmpReg(r) => {
+                let target = self.get_register(r);
+
+                if target as usize >= self.memory.len() {
+                    return Err(MachineErr::PcFault);
+                }
+
+                self.set_register(Register::Pc, target);
+                Ok(())
             }
         }
     }

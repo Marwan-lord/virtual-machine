@@ -1,16 +1,13 @@
 use crate::register::Register;
 
-// instruction = [ 0 0 0 0 0 0 0 0 0 0 |  0 0 0 0 0 0 0 0 0 ]
-//                       OPERATOR      | ARG(S)
-//                                     | 8 bit literal
-//                                     | REG1 | REG2
-
 #[derive(Debug)]
 pub enum Instruction {
     Nop,
     Push(u8),
     PopRegister(Register),
     AddStack,
+    JmpReg(Register),
+    JmpImm,
     AddRegister(Register, Register),
     PushRegister(Register),
     Signal(u8),
@@ -18,11 +15,11 @@ pub enum Instruction {
 
 impl Instruction {
     fn encode_r1(r: Register) -> u16 {
-        (r as u16) & 0xf << 8
+        (r as u16) & (0xf << 8)
     }
 
     fn encode_r2(r: Register) -> u16 {
-        (r as u16) & 0xf << 12
+        (r as u16) & (0xf << 12)
     }
 
     fn encode_num(num: u16) -> u16 {
@@ -37,6 +34,8 @@ impl Instruction {
         match self {
             Self::Nop => OpCode::Nop as u16,
             Self::Push(x) => OpCode::Push as u16 | Self::encode_num(*x as u16),
+            Self::JmpImm => OpCode::JmpImm as u16,
+            Self::JmpReg(r) => OpCode::JmpReg as u16 | Self::encode_r1(*r),
             Self::PopRegister(r) => OpCode::PopRegister as u16 | Self::encode_r1(*r),
             Self::PushRegister(r) => OpCode::PushRegister as u16 | Self::encode_r1(*r),
             Self::AddStack => OpCode::AddStack as u16,
@@ -53,6 +52,8 @@ pub enum OpCode {
     Push = 0x1,
     PopRegister = 0x2,
     PushRegister = 0x3,
+    JmpReg = 0x07,
+    JmpImm = 0x08,
     Signal = 0x0f,
     AddStack = 0x10,
     AddRegister = 0x11,
@@ -68,6 +69,8 @@ impl OpCode {
             "Signal" => Some(Self::Signal),
             "AddStack" => Some(Self::AddStack),
             "AddRegister" => Some(Self::AddRegister),
+            "JmpReg" => Some(Self::JmpReg),
+            "JmpImm" => Some(Self::JmpImm),
             _ => None,
         }
     }
@@ -81,6 +84,8 @@ impl OpCode {
             x if x == Self::Signal as u8 => Some(Self::Signal),
             x if x == Self::AddStack as u8 => Some(Self::AddStack),
             x if x == Self::AddRegister as u8 => Some(Self::AddRegister),
+            x if x == Self::JmpReg as u8 => Some(Self::JmpReg),
+            x if x == Self::JmpImm as u8 => Some(Self::JmpImm),
             _ => None,
         }
     }

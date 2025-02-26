@@ -34,6 +34,8 @@ fn parse_numeric(s: &str) -> Result<u8, AsmErr> {
 fn parse_register(s: &str) -> Result<Register, AsmErr> {
     match s {
         "A" => Ok(Register::A),
+        "B" => Ok(Register::B),
+        "C" => Ok(Register::C),
         _ => Err(AsmErr::UnknownReg),
     }
 }
@@ -50,6 +52,11 @@ fn handle_line(parts: &[&str]) -> Result<Instruction, AsmErr> {
     let opcode = OpCode::from_string(parts[0]).ok_or(AsmErr::UnknownOpCode)?;
     match opcode {
         OpCode::Nop => Ok(Instruction::Nop),
+        OpCode::JmpImm => Ok(Instruction::JmpImm),
+        OpCode::JmpReg => {
+            assert_length(parts, 2)?;
+            Ok(Instruction::JmpReg(parse_register(parts[1])?))
+        }
         OpCode::Push => {
             assert_length(parts, 2)?;
             Ok(Instruction::Push(parse_numeric(parts[1])?))

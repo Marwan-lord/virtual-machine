@@ -1,5 +1,6 @@
 pub trait Addressable {
     fn read(&self, addr: u16) -> Option<u8>;
+    fn len(&self) -> usize;
     fn write(&mut self, addr: u16, value: u8) -> bool;
 
     //
@@ -8,7 +9,7 @@ pub trait Addressable {
     //      Op         Value | register
     //   [0000000000000000]
     //      Instruction
-    //      
+    //
     fn read2(&self, addr: u16) -> Option<u16> {
         if let Some(x0) = self.read(addr) {
             if let Some(x1) = self.read(addr + 1) {
@@ -68,6 +69,11 @@ impl Addressable for LinearMemory {
             None
         }
     }
+
+    fn len(&self) -> usize {
+        self.size
+    }
+
     fn write(&mut self, addr: u16, value: u8) -> bool {
         if (addr as usize) < self.size {
             self.bytes[addr as usize] = value;
